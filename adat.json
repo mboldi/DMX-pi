@@ -1,0 +1,18 @@
+{
+	"pot1" : {
+		"color" : "red",
+		"level" : 0
+	},
+	"pot2" : {
+		"color" : "green",
+		"level" : 0
+	},
+	"pot3" : {
+		"color" : "blue",
+		"level" : 0
+	},
+	"pot4" : {
+		"color" : "lum",
+		"level" : 0
+	}
+}
