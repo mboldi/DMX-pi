@@ -55,8 +55,11 @@ def drawRect(x, y, w, h, id):
 def setButText(x, y, levels):
 	i = 0
 	s = ["R=", "G=", "B=", "LUM="]
-	for i in range(4):
+	for i in range(2):
 		screen.addstr(y+1+i, x+1, s[i] +  str(levels[i]) + " "*(3-len(str(levels[i]))))
+
+	for i in range(2):
+		screen.addstr(y+1+i, x+7, s[i] +  str(levels[i]) + " "*(3-len(str(levels[i]))))
 
 	screen.refresh()
 
@@ -95,7 +98,7 @@ def potBox(x, y, w, h, level, id):
 	screen.refresh()
 
 height, width = os.popen('stty size', 'r').read().split()
-wId = int(width)/12
+wId = int(width)/10
 hId = int(height)/8
 
 poses = []
@@ -103,8 +106,8 @@ poses = []
 class DMX_screen(object):
 	def __init__(self, lamps, ui):
 
-		lampData = json.load(lamps)
-		uiData = json.load(ui)
+		lampData = json.loads(lamps)
+		uiData = json.loads(ui)
 
 		i = 0
 		j = 0
@@ -148,8 +151,14 @@ class DMX_screen(object):
 
 			potBox(2*wId+(7+3)*i + 3, 12, 7, int(height)-13, lev, i+1)
 
+		screen.addstr(2, int(width)-30, "")
+		screen.refresh()
+
 	def updatePot(self, potId, level):
 		potBox(2*wId+(7+3)*(potId-1) + 3, 12, 7, int(height)-13, level, potId) 
+
+		screen.addstr(2, int(width)-30, "")
+		screen.refresh()
 
 	def updateSel(self, id, state):
 		if state == 1:
@@ -157,18 +166,64 @@ class DMX_screen(object):
 		else:
 			drawRect(poses[id-1][0], poses[id-1][1], int(wId), int(hId), str(id))
 
+		screen.addstr(2, int(width)-30, "")
+		screen.refresh()
+
 	def updateLampData(self, id, levels):
 		setButText(poses[id-1][0], poses[id-1][1], levels)
+
+		screen.addstr(2, int(width)-30, "")
+		screen.refresh()
+
+	def updateUi(self, lamps, ui):
+		lampData = json.loads(lamps)
+		uiData = json.loads(ui)
+
+		i = 0
+		j = 0
+		num = 1
+		level = [0,0,0,0]
+		for i in range(8):
+			for j in range(2):
+				if uiData["lamSel"]["State" + str(num)] == 1:
+					drawRect(j*wId+1,i*hId+1, int(wId), int(hId), str(num) + " SEL")
+				else:
+					drawRect(j*wId+1,i*hId+1, int(wId), int(hId), str(num))
+
+				pos = [j*wId+1,i*hId+1]
+
+				poses.append(pos)
+
+				level[0] = lampData["lamp"+str(num)]["r"]
+				level[1] = lampData["lamp"+str(num)]["g"]
+				level[2] = lampData["lamp"+str(num)]["b"]
+				level[3] = lampData["lamp"+str(num)]["l"]
+
+				setButText(j*wId+1,i*hId+1, level)
+
+				num += 1
+
+		#drawRect(2*wId + 3, 1, 11*4-1, 3, -1)
+		
+		for i in range(4):
+			a = int(2*wId+(i)*8+(i+1)*3)
+			#asd=str(uiData["pot" + str(i+1)]["color"])
+			#drawRect(a, 3, 10, 3, str(uiData["pot"+str(i+1)]["color"]).upper())
+			screen.addstr(4, a+1, str(uiData["pot" + str(i+1)]["level"]) + " "*(4-len(str(uiData["pot" + str(i+1)]["level"]))))
+			screen.refresh()
+
+		screen.refresh()
 
 	def cleanup(self):
 		curses.echo()
 		curses.nocbreak()
+		curses.curs_set(2)
 		curses.endwin()
 
 
 if __name__ == "__main__":
 	try:
-		scr = DMX_screen(open('lamps.json'), open('server/data.json'))
+		scr = DMX_screen(open('server/lamps.json'), open('server/data.json'))
 
 		for i in range(255):
 			scr.updatePot(1, i)
