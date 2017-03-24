@@ -12,7 +12,8 @@ import requests
 gpio.setmode(gpio.BCM)
 DEBUG = 1
 
-mcp = Adafruit_MCP230XX(busnum = 1, address = 0x20, num_gpios = 16)
+mcp_butt = Adafruit_MCP230XX(busnum = 1, address = 0x22, num_gpios = 16)
+mcp_led = Adafruit_MCP230XX(busnum = 1, address = 0x24, num_gpios = 16)
 OUTPUT = 0
 INPUT = 1
 
@@ -23,14 +24,9 @@ butPin = 1
 #SPI pins
 potPin = 0
 
-mcp_outputs = [ledPin]
-for output in mcp_outputs:
-	   mcp.config(output, OUTPUT)
-
-mcp_inputs = [butPin]
-for inp in mcp_inputs:
-	   mcp.config(inp, INPUT)
-	   mcp.pullup(inp, 1)
+for i in range(16):
+	mcp_butt.config(i, INPUT)
+	mcp_led.config(i, OUTPUT)
 
 # read SPI data from MCP3008 chip, 8 possible adc's (0 thru 7)
 def readadc(adcnum, clockpin, mosipin, misopin, cspin):
@@ -101,7 +97,8 @@ gpio.setup(SPICS, gpio.OUT)
 #gpio.setup(ledPin, gpio.OUT)
 #gpio.setup(butPin, gpio.IN)
 
-state = 0
+wasChange = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+state = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 try:
 	#start server
@@ -113,16 +110,16 @@ try:
 
 	time.sleep(0.5)
 
-	resp = requests.get('http://localhost:8081/uidata')
+	resp = requests.get('http://localhost:8081/bankdata')
 	#print resp.text
-	data = json.loads(resp.text)
+	bankdata = json.loads(resp.text)
 
-	state = data["lamSel"]["State1"]
-	mcp.output(ledPin, state)
+	#for i in range(16):
+	#	state[i] = uiJson["lamSel"]["State" + str(i+1)]
 
 	lastUpd = time.time()
 
-	scr = DMX_screen(requests.get('http://localhost:8081/lampdata').text, requests.get('http://localhost:8081/uidata').text)
+	scr = DMX_screen(requests.get('http://localhost:8081/uidata').text, requests.get('http://localhost:8081/bankdata').text)
 
 	potLast = 0
 	lastUpd = 0
@@ -134,39 +131,45 @@ try:
 
 		#update data
 		if (time.time()-lastUpd) >= 0.01:
-			lampdata = requests.get('http://localhost:8081/lampdata').text
 			uidata = requests.get('http://localhost:8081/uidata').text
+			bankdata = requests.get('http://localhost:8081/bankdata').text
 
-			scr.updateUi(lampdata, uidata)
+			scr.updateUi(uidata, bankdata)
 
-			lampJson = json.loads(lampdata)
 			uiJson = json.loads(uidata)
+			bankJson = json.loads(bankdata)
 
-			state = uiJson["lamSel"]["State1"]
+			for i in range(16):
+				#name = "State" + str(i+1)
+				state[i] = int(uiJson["lamSel"][i])
 
 			lastUpd = time.time()
 			#lastReq = time.time()
 
 		if pot != potLast:
+			#scr.updatePot(1, pot)
+			requests.get('http://localhost:8081/updatedmxch/0/' + str(pot))
 			potLast = pot
-			scr.updatePot(1, pot)
-			#requests.get('http://localhost:8081/updatePot/1/' + str(pot))
 			lastReq = time.time()
 
-		if mcp.input(butPin) == 0 and wasChange == 0:
-			if state == 0:
-				state = 1
-			else:
-				state = 0
-			scr.updateSel(1, state)
+		for i in range(16):
+			if mcp_butt.input(i) and wasChange[i] == 0:
+				if state[i] == 0:
+					state[i] = 1
+				else:
+					state[i] = 0
+				scr.updateSel(1, state[i])
 
-			state = int(requests.get('http://localhost:8081/updateSel/1').text)
-			
-			wasChange = 1
-		elif mcp.input(butPin):
-			wasChange = 0
+				mcp_led.output(i, 1)
 
-		mcp.output(ledPin, state)
+				state[i] = int(requests.get('http://localhost:8081/updateSel/' + str(i)).text)
+
+				wasChange[i] = 1
+			elif not mcp_butt.input(i):
+				wasChange[i] = 0
+
+		for i in range(16):
+			mcp_led.output(i, state[i])
 
 		time.sleep(0.01)
 

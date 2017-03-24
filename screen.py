@@ -98,119 +98,192 @@ def potBox(x, y, w, h, level, id):
 	screen.refresh()
 
 height, width = os.popen('stty size', 'r').read().split()
+
+#if int(width) < 130:
+#	width = 130
+
+#if int(height) < 41:
+#	hwight = 41
+
 wId = int(width)/10
 hId = int(height)/8
 
 poses = []
 
 class DMX_screen(object):
-	def __init__(self, lamps, ui):
+	def __init__(self, uiData, bankData):
+		if int(width) >= 130 and int(height) >= 41:
 
-		lampData = json.loads(lamps)
-		uiData = json.loads(ui)
+			uiData = json.loads(uiData)
+			bankData = json.loads(bankData)
 
-		i = 0
-		j = 0
-		num = 1
-		level = [0,0,0,0]
-		for i in range(8):
-			for j in range(2):
-				if uiData["lamSel"]["State" + str(num)] == 1:
-					drawRect(j*wId+1,i*hId+1, int(wId), int(hId), str(num) + " SEL")
+			i = 0
+			j = 0
+			num = 1
+			level = [0,0,0,0]
+			for i in range(8):
+#				for j in range(2):
+				if uiData["lamSel"][num-1] == 1:
+					drawRect(0*wId+1,i*hId+1, int(wId), int(hId), str(num) + " SEL")
 				else:
-					drawRect(j*wId+1,i*hId+1, int(wId), int(hId), str(num))
+					drawRect(0*wId+1,i*hId+1, int(wId), int(hId), str(num))
 
-				pos = [j*wId+1,i*hId+1]
+				pos = [0*wId+1,i*hId+1]
 
 				poses.append(pos)
 
-				level[0] = lampData["lamp"+str(num)]["r"]
-				level[1] = lampData["lamp"+str(num)]["g"]
-				level[2] = lampData["lamp"+str(num)]["b"]
-				level[3] = lampData["lamp"+str(num)]["l"]
+				level[0] = uiData["lamp"+str(num)]["r"]
+				level[1] = uiData["lamp"+str(num)]["g"]
+				level[2] = uiData["lamp"+str(num)]["b"]
+				level[3] = uiData["lamp"+str(num)]["l"]
 
-				setButText(j*wId+1,i*hId+1, level)
+				setButText(0*wId+1,i*hId+1, level)
+
+
+				if uiData["lamSel"][num+7] == 1:
+					drawRect(wId+1,i*hId+1, int(wId), int(hId), str(num+8) + " SEL")
+				else:
+					drawRect(wId+1,i*hId+1, int(wId), int(hId), str(num+8))
+
+				pos = [1*wId+1,i*hId+1]
+
+				poses.append(pos)
+
+				level[0] = uiData["lamp"+str(num+7)]["r"]
+				level[1] = uiData["lamp"+str(num+7)]["g"]
+				level[2] = uiData["lamp"+str(num+7)]["b"]
+				level[3] = uiData["lamp"+str(num+7)]["l"]
+
+				setButText(1*wId+1,i*hId+1, level)
 
 				num +=1
 
 
-		drawRect(2*wId + 3, 1, 11*4-1, 3, -1)
-		
-		for i in range(4):
-			a = int(2*wId+(i)*8+(i+1)*3)
-			asd=str(uiData["pot" + str(i+1)]["color"])
-			drawRect(a, 3, 10, 3, str(uiData["pot"+str(i+1)]["color"]).upper())
-			screen.addstr(4, a+1, str(uiData["pot" + str(i+1)]["level"]))
+			drawRect(2*wId + 3, 1, 11*4-1, 3, -1)
+			
+			for i in range(4):
+				a = int(2*wId+(i)*8+(i+1)*3)
+				drawRect(a, 3, 10, 3, -1)
+				screen.addstr(4, a+1, str(uiData["pot"][i]))
+				screen.refresh()
+
+			screen.addstr(7, 2*wId + 3, "Bank: " + str(uiData["bank"]))
 			screen.refresh()
 
-		screen.addstr(7, 2*wId + 3, "Bank: " + str(1))
-		screen.refresh()
+			for i in range(8):
+				lev = uiData["dmxCh"][i]
 
-		for i in range(4):
-			lev = uiData["pot" + str(i+1)]["level"]
+				potBox(2*wId+(7+3)*i + 3, 12, 7, int(height)-13, lev, i+1)
 
-			potBox(2*wId+(7+3)*i + 3, 12, 7, int(height)-13, lev, i+1)
+			#screen.addstr(2, int(width)-30, "width: " + width)
+			#screen.addstr(3, int(width)-30, "height: " + height)
 
-		screen.addstr(2, int(width)-30, "")
+		else:
+			screen.addstr(1,1, "Screen too small!")
+
 		screen.refresh()
 
 	def updatePot(self, potId, level):
-		potBox(2*wId+(7+3)*(potId-1) + 3, 12, 7, int(height)-13, level, potId) 
+		if int(width) >= 130 and int(height) >= 41:
+			potBox(2*wId+(7+3)*(potId-1) + 3, 12, 7, int(height)-13, level, potId) 
 
-		screen.addstr(2, int(width)-30, "")
+			screen.addstr(2, int(width)-30, "")
+
+		else:
+			screen.addstr(1,1, "Screen too small!")
+
 		screen.refresh()
 
 	def updateSel(self, id, state):
-		if state == 1:
-			drawRect(poses[id-1][0], poses[id-1][1], int(wId), int(hId), str(id) + " SEL")
-		else:
-			drawRect(poses[id-1][0], poses[id-1][1], int(wId), int(hId), str(id))
+		if int(width) >= 130 and int(height) >= 41:
+			if state == 1:
+				drawRect(poses[id-1][0], poses[id-1][1], int(wId), int(hId), str(id) + " SEL")
+			else:
+				drawRect(poses[id-1][0], poses[id-1][1], int(wId), int(hId), str(id))
 
-		screen.addstr(2, int(width)-30, "")
+			screen.addstr(2, int(width)-30, "")
+
+		else:
+			screen.addstr(1,1, "Screen too small!")
+
 		screen.refresh()
 
 	def updateLampData(self, id, levels):
-		setButText(poses[id-1][0], poses[id-1][1], levels)
+		if int(width) >= 130 and int(height) >= 41:
+			setButText(poses[id-1][0], poses[id-1][1], levels)
 
-		screen.addstr(2, int(width)-30, "")
+			screen.addstr(2, int(width)-30, "")
+
+		else:
+			screen.addstr(1,1, "Screen too small!")
+
 		screen.refresh()
 
-	def updateUi(self, lamps, ui):
-		lampData = json.loads(lamps)
-		uiData = json.loads(ui)
+	def updateUi(self, uiData, bankData):
+		if int(width) >= 130 and int(height) >= 41:
+			bankData = json.loads(bankData)
+			uiData = json.loads(uiData)
 
-		i = 0
-		j = 0
-		num = 1
-		level = [0,0,0,0]
-		for i in range(8):
-			for j in range(2):
-				if uiData["lamSel"]["State" + str(num)] == 1:
-					drawRect(j*wId+1,i*hId+1, int(wId), int(hId), str(num) + " SEL")
+			i = 0
+			j = 0
+			num = 1
+			level = [0,0,0,0]
+			for i in range(8):
+#				for j in range(2):
+				if uiData["lamSel"][num-1] == 1:
+					drawRect(0*wId+1,i*hId+1, int(wId), int(hId), str(num) + " SEL")
 				else:
-					drawRect(j*wId+1,i*hId+1, int(wId), int(hId), str(num))
+					drawRect(0*wId+1,i*hId+1, int(wId), int(hId), str(num))
 
-				pos = [j*wId+1,i*hId+1]
+				pos = [0*wId+1,i*hId+1]
 
 				poses.append(pos)
 
-				level[0] = lampData["lamp"+str(num)]["r"]
-				level[1] = lampData["lamp"+str(num)]["g"]
-				level[2] = lampData["lamp"+str(num)]["b"]
-				level[3] = lampData["lamp"+str(num)]["l"]
+				level[0] = uiData["lamp"+str(num)]["r"]
+				level[1] = uiData["lamp"+str(num)]["g"]
+				level[2] = uiData["lamp"+str(num)]["b"]
+				level[3] = uiData["lamp"+str(num)]["l"]
 
-				setButText(j*wId+1,i*hId+1, level)
+				setButText(0*wId+1,i*hId+1, level)
 
-				num += 1
 
-		#drawRect(2*wId + 3, 1, 11*4-1, 3, -1)
-		
-		for i in range(4):
-			a = int(2*wId+(i)*8+(i+1)*3)
-			#asd=str(uiData["pot" + str(i+1)]["color"])
-			#drawRect(a, 3, 10, 3, str(uiData["pot"+str(i+1)]["color"]).upper())
-			screen.addstr(4, a+1, str(uiData["pot" + str(i+1)]["level"]) + " "*(4-len(str(uiData["pot" + str(i+1)]["level"]))))
+				if uiData["lamSel"][num+7] == 1:
+					drawRect(wId+1,i*hId+1, int(wId), int(hId), str(num+8) + " SEL")
+				else:
+					drawRect(wId+1,i*hId+1, int(wId), int(hId), str(num+8))
+
+				pos = [1*wId+1,i*hId+1]
+
+				poses.append(pos)
+
+				level[0] = uiData["lamp"+str(num+7)]["r"]
+				level[1] = uiData["lamp"+str(num+7)]["g"]
+				level[2] = uiData["lamp"+str(num+7)]["b"]
+				level[3] = uiData["lamp"+str(num+7)]["l"]
+
+				setButText(1*wId+1,i*hId+1, level)
+
+				num +=1
+
+			#drawRect(2*wId + 3, 1, 11*4-1, 3, -1)
+			
+			for i in range(4):
+				a = int(2*wId+(i)*8+(i+1)*3)
+				#asd=str(uiData["pot" + str(i+1)]["color"])
+				#drawRect(a, 3, 10, 3, str(uiData["pot"+str(i+1)]["color"]).upper())
+				screen.addstr(4, a+1, str(uiData["pot"][i]) + " "*(4-len(str(uiData["pot"][i]))))
+				screen.refresh()
+
+			screen.addstr(7, 2*wId + 3, "Bank: " + str(uiData["bank"]))
 			screen.refresh()
+
+			for i in range(8):
+				lev = uiData["dmxCh"][i]
+
+				potBox(2*wId+(7+3)*i + 3, 12, 7, int(height)-13, lev, i+1)
+
+		else:
+			screen.addstr(1,1, "Screen too small!")
 
 		screen.refresh()
 

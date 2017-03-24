@@ -2,118 +2,59 @@ var express = require('express');
 var app = express();
 var fs = require("fs");
 
+var nonDelData;
 var uidata;
-var lampdata;
 
 app.get('/init', function(req, res){
      fs.readFile(__dirname + "/data.json", 'utf8', function(err, data){
           if(err) throw err;
-          uidata = JSON.parse(data);
+          //console.log("string: " + data);
+          nonDelData = JSON.parse(data);
      });
 
-     fs.readFile(__dirname + "/lamps.json", 'utf8', function(err, data){
+     //console.log("json: " +  JSON.stringify(nonDelData));
+
+     fs.readFile(__dirname + "/uidata.json", 'utf8', function(err, data){
           if (err) throw err;
-          lampdata = JSON.parse(data);
+          uidata = JSON.parse(data);
      });
 
      res.end("loaded")
 })
-/*
-app.get('/varGet', function(req, res){
-     res.end(JSON.stringify(uidata));
-})*/
+
+app.get('/bankdata', function (req, res) {
+   res.end(JSON.stringify(nonDelData));
+})
+
+app.get('/getbank/:id', function(req, res){
+     res.end(JSON.stringify(nonDelData["bank" + req.params.id]))
+})
 
 app.get('/uidata', function (req, res) {
-   /*fs.readFile( __dirname + "/" + "data.json", 'utf8', function (err, data) {
-
-
-          //console.log("Teljes adatlekeres");
-          res.end( data );
-   });*/
-
    res.end(JSON.stringify(uidata));
 })
 
-app.get('/lampdata', function (req, res) {
-   /*fs.readFile( __dirname + "/" + "lamps.json", 'utf8', function (err, data) {
-          //console.log("Teljes adatlekeres");
-          res.end( data );
-   });*/
-
-   res.end(JSON.stringify(lampdata));
-})
-
 app.get('/lampdata/:id', function(req, res) {
-     res.end(JSON.stringify(lampdata["lamp" + req.params.id]));
+     res.end(JSON.stringify(uidata["lamp" + req.params.id]));
 })
 
-app.get('/dataelem/:id', function(req, res) {
-     /*fs.readFile( __dirname + "/" + "data.json", 'utf8', function (err, data) {
-          //console.log(req.params.id);
-          adatok = JSON.parse(data);
-          var adat = adatok["pot: " + req.params.id] 
-          //console.log( adat );
-          res.end( JSON.stringify(adat));
-     });*/
-     var adat = uidata["pot" + req.params.id];
+app.get('/pot/:id', function(req, res) {
+     var adat = uidata["pot"][parseInt(req.params.id)];
      res.end(JSON.stringify(adat));
 })
 
 app.get('/updatePot/:id/:level', function(req, res) {
-     /*fs.readFile(__dirname + "/" + "data.json", 'utf8', function(err, data) {
-          adat = JSON.parse(data);
-          var pot = adat["pot" + req.params.id];
+     uidata["pot"][parseInt(req.params.id)] = parseInt(req.params.level);
 
-          var level = req.params.level;
-          //console.log("id: " + adat["pot" + req.params.id]["color"] + " level: " + level);
-
-          pot["level"] = parseInt(level);
-          adat["pot" + req.params.id] = pot;
-          fs.writeFile(__dirname + "/" + "data.json", JSON.stringify(adat), 'utf8', function(err) {
-               if (err) throw err;
-          });
-
-          res.end(JSON.stringify(adat["pot" + req.params.id]));
-     });*/
-
-     var pot = uidata["pot" + req.params.id];
-     pot["level"] = parseInt(req.params.level);
-
-     uidata["pot" + req.params.id] = pot;
-
-     fs.writeFile(__dirname + "/" + "data.json", JSON.stringify(uidata), 'utf8', function(err) {
+     fs.writeFile(__dirname + "/" + "uidata.json", JSON.stringify(uidata), 'utf8', function(err) {
           if (err) throw err;
      });
 
-     //console.log(JSON.stringify(pot));
-
-     res.end(JSON.stringify(pot));
+     res.end(JSON.stringify(uidata["pot"][parseInt(req.params.id)]));
 })
 
 app.get('/updateSel/:id', function(req, res) {
-     /*fs.readFile(__dirname + "/" + "data.json", 'utf8', function(err, data) {
-          adat = JSON.parse(data);
-          var lamSel = adat["lamSel"];
-          var butState = lamSel["State" + req.params.id];
-
-          if (butState == 0){
-               butState = 1;
-          }else{
-               butState = 0;
-          }
-
-          adat["lamSel"]["State" + req.params.id] = butState;
-
-          //console.log("State" + req.params.id + ": " + butState);
-
-          fs.writeFile(__dirname + "/" + "data.json", JSON.stringify(adat), 'utf8', function(err) {
-               if (err) throw err;
-          });
-
-          res.end(JSON.stringify(adat["lamSel"]["State" + req.params.id]));
-     });*/
-
-     var butState = uidata["lamSel"]["State" + req.params.id];
+     var butState = uidata["lamSel"][parseInt(req.params.id)];
 
      if (butState == 0){
                butState = 1;
@@ -121,46 +62,56 @@ app.get('/updateSel/:id', function(req, res) {
                butState = 0;
           }
 
-     uidata["lamSel"]["State" + req.params.id] = parseInt(butState);
+     uidata["lamSel"][parseInt(req.params.id)] = parseInt(butState);
 
-     fs.writeFile(__dirname + "/" + "data.json", JSON.stringify(uidata), 'utf8', function(err) {
+     fs.writeFile(__dirname + "/" + "uidata.json", JSON.stringify(uidata), 'utf8', function(err) {
           if (err) throw err;
      });
 
-     //console.log(butState);
-
-     res.end(JSON.stringify(butState));
+     res.end(JSON.stringify(uidata["lamSel"][parseInt(req.params.id)]));
 })
 
 app.get('/updateLamp/:id/:r/:g/:b/:l', function(req, res) {
-     /*fs.readFile(__dirname + "/lamps.json", "utf8", function(err, data) {
-          adat = JSON.parse(data);
-          var lamp = adat["lamp" + req.params.id];
-          lamp["r"] = req.params.r;
-          lamp["g"] = req.params.g;
-          lamp["b"] = req.params.b;
-          lamp["l"] = req.params.l;
-
-          adat["lamp" + req.params.id] = lamp;
-
-          fs.writeFile(__dirname + "/lamps.json", JSON.stringify(adat), 'utf8', function(err) {
-               if (err) throw err;
-          });
-          res.end(JSON.stringify(lamp))
-     });*/
-
-     var lamp = lampdata["lamp" + req.params.id];
+     var lamp = uidata["lamp" + req.params.id];
      lamp["r"] = parseInt(req.params.r);
      lamp["g"] = parseInt(req.params.g);
      lamp["b"] = parseInt(req.params.b);
      lamp["l"] = parseInt(req.params.l);
 
-     lampdata["lamp" + req.params.id] = lamp;
-     fs.writeFile(__dirname + "/lamps.json", JSON.stringify(lampdata), 'utf8', function(err) {
+     uidata["lamp" + req.params.id] = lamp;
+     fs.writeFile(__dirname + "/uidata.json", JSON.stringify(uidata), 'utf8', function(err) {
           if (err) throw err;
      });
 
-     res.end(JSON.stringify(lampdata));
+     res.end(JSON.stringify(uidata["lamp" + req.params.id]));
+})
+
+app.get('/updateDmxCh/:id/:level', function(req, res){
+     uidata["dmxCh"][parseInt(req.params.id)] = parseInt(req.params.level);
+
+     fs.writeFile(__dirname + "/uidata.json", JSON.stringify(uidata), 'utf8', function(err) {
+          if (err) throw err;
+     });
+
+     res.end(JSON.stringify(uidata["dmxCh"][parseInt(req.params.id)]));
+})
+
+app.get('/dmxch/:id', function(req, res){
+     res.end(JSON.stringify(uidata["dmxCh"][parseInt(req.params.id)-1]));
+})
+
+app.get('/getLamp/:id', function(req, res){
+     res.end(JSON.stringify(uidata["lamp" + req.params.id]));
+})
+
+app.get('/updateBank/:bank', function(req, res){
+     uidata["bank"] = parseInt(req.params.bank);
+
+     fs.writeFile(__dirname + "/uidata.json", JSON.stringify(uidata), 'utf8', function(err) {
+          if (err) throw err;
+     });
+
+     res.end(JSON.stringify(uidata["bank"]));
 })
 
 var server = app.listen(8081, function () {
